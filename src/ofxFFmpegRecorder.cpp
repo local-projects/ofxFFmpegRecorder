@@ -30,6 +30,7 @@ ofxFFmpegRecorder::ofxFFmpegRecorder()
     , m_VideCodec( "mpeg4" )
     , m_AudioCodec( "libmp3lame" )
     , m_CustomRecordingFile( nullptr )
+    , m_CustomRecordingFileAudio( nullptr )
     , m_DefaultRecordingFile( nullptr )
 {
 }
@@ -381,7 +382,7 @@ bool ofxFFmpegRecorder::startCustomRecord()
     args.push_back( "-pix_fmt " + mPixFmt );
     args.push_back( "-vcodec rawvideo" );
 
-    //configure output file
+    // configure output file
     args.push_back( "-i -" );
     args.push_back( "-vcodec " + m_VideCodec );
     args.push_back( "-b:v " + std::to_string( m_BitRate ) + "k" );
@@ -433,7 +434,7 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
     args.push_back( "-y" );
     args.push_back( "-vn" );
     args.push_back( "-r " + std::to_string( m_sampleRate ) );
-    //args.push_back( "-f f64be" );
+    // args.push_back( "-f f64be" );
     args.push_back( "-f f32le" );
     // args.push_back("-acodec aac");
     args.push_back( "-ac 2" );
@@ -441,7 +442,7 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
 
 
     // audio export file config
-    //args.push_back( "-acodec " + m_AudioCodec );
+    // args.push_back( "-acodec " + m_AudioCodec );
     args.push_back( "-f mp3" );
     args.push_back( "-ar " + std::to_string( m_sampleRate ) );
     args.push_back( "-ac 2" );
@@ -456,9 +457,9 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
     }
 
 #if defined( _WIN32 )
-    m_CustomRecordingFile = _popen( cmd.c_str(), "wb" );
+    m_CustomRecordingFileAudio = _popen( cmd.c_str(), "wb" );
 #else
-    m_CustomRecordingFile = popen( cmd.c_str(), "w" );
+    m_CustomRecordingFileAudio = popen( cmd.c_str(), "w" );
 #endif // _WIN32
 
     return true;
@@ -535,14 +536,14 @@ size_t ofxFFmpegRecorder::addFrame( const ofPixels &pixels )
 
     m_Frames.produce( new ofPixels( pixels ) );
     m_AddedVideoFrames++;
-    
-   /*
-    while( m_AddedVideoFrames == 0 || delta >= framerate ) {
-        delta -= framerate;
-        m_Frames.produce( new ofPixels( pixels ) );
-        m_AddedVideoFrames++;
-    }
-     */
+
+    /*
+     while( m_AddedVideoFrames == 0 || delta >= framerate ) {
+         delta -= framerate;
+         m_Frames.produce( new ofPixels( pixels ) );
+         m_AddedVideoFrames++;
+     }
+      */
     return written;
 }
 
@@ -553,7 +554,7 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
         return 0;
     }
 
-    if( m_CustomRecordingFile == nullptr || m_CustomRecordingFile == NULL) {
+    if( m_CustomRecordingFileAudio == nullptr || m_CustomRecordingFileAudio == NULL ) {
         LOG_ERROR( "Custom recording is not in proggress. Cannot add the frame." );
         return 0;
     }
@@ -579,7 +580,7 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
     m_AddedAudioFrames++;
 
     /*
-    //this creates were noise and isn't adding buffers synchronously 
+    //this creates were noise and isn't adding buffers synchronously
     while( m_AddedAudioFrames == 0 || delta >= framerate ) {
         delta -= framerate;
         m_Buffers.produce( new ofSoundBuffer( buffer ) );
@@ -592,19 +593,32 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
 
 void ofxFFmpegRecorder::stop()
 {
-    if( m_CustomRecordingFile ) {
-        while( m_Frames.size() > 0 || m_Buffers.size() > 0) {
+    if( m_CustomRecordingFile || m_CustomRecordingFileAudio ) {
+
+        while( m_Frames.size() > 0 || m_Buffers.size() > 0 ) {
             ofSleepMillis( 100 );
         }
+
+        if( m_CustomRecordingFile ) {
 #if defined( _WIN32 )
-        _pclose( m_CustomRecordingFile );
-        m_CustomRecordingFile = nullptr;
+            _pclose( m_CustomRecordingFile );
+            m_CustomRecordingFile = nullptr;
 #else
-        pclose( m_CustomRecordingFile );
+            pclose( m_CustomRecordingFile );
 #endif
-        
+        }
+
+        if( m_CustomRecordingFileAudio ) {
+#if defined( _WIN32 )
+            _pclose( m_CustomRecordingFileAudio );
+            m_CustomRecordingFileAudio = nullptr;
+#else
+            pclose( m_CustomRecordingFileAudio );
+#endif
+        }
         m_AddedVideoFrames = 0;
         m_AddedAudioFrames = 0;
+
         joinThread();
     }
     else if( m_DefaultRecordingFile ) {
@@ -620,15 +634,29 @@ void ofxFFmpegRecorder::stop()
 
 void ofxFFmpegRecorder::cancel()
 {
-    if( m_CustomRecordingFile ) {
+    if( m_CustomRecordingFile || m_CustomRecordingFileAudio ) {
+
+        if( m_CustomRecordingFile ) {
 #if defined( _WIN32 )
-        _pclose( m_CustomRecordingFile );
+            _pclose( m_CustomRecordingFile );
 #else
-        pclose( m_CustomRecordingFile );
+            pclose( m_CustomRecordingFile );
 #endif
-        m_CustomRecordingFile = nullptr;
-        m_AddedVideoFrames = 0;
-        m_AddedAudioFrames = 0;
+            m_CustomRecordingFile = nullptr;
+            m_AddedVideoFrames = 0;
+        }
+
+        if( m_CustomRecordingFileAudio ) {
+#if defined( _WIN32 )
+            _pclose( m_CustomRecordingFileAudio );
+#else
+            pclose( m_CustomRecordingFileAudio );
+#endif
+            m_CustomRecordingFileAudio = nullptr;
+
+            m_AddedAudioFrames = 0;
+        }
+
         joinThread();
     }
     else if( m_DefaultRecordingFile ) {
@@ -718,12 +746,17 @@ void ofxFFmpegRecorder::clearAdditionalArguments()
 
 bool ofxFFmpegRecorder::isRecording() const
 {
-    return m_DefaultRecordingFile != nullptr || m_CustomRecordingFile != nullptr;
+    return m_DefaultRecordingFile != nullptr || m_CustomRecordingFile != nullptr || m_CustomRecordingFileAudio != nullptr;
 }
 
 bool ofxFFmpegRecorder::isRecordingCustom() const
 {
     return m_CustomRecordingFile != nullptr;
+}
+
+bool ofxFFmpegRecorder::isRecordingCustomAudio() const
+{
+    return m_CustomRecordingFileAudio != nullptr;
 }
 
 bool ofxFFmpegRecorder::isRecordingDefault() const
@@ -824,7 +857,7 @@ void ofxFFmpegRecorder::determineDefaultDevices()
 
 void ofxFFmpegRecorder::processFrame()
 {
-    while( isRecording() ) {
+    while( m_CustomRecordingFile != nullptr ) {
         ofPixels *pixels = nullptr;
         if( m_Frames.consume( pixels ) && pixels ) {
             const unsigned char *data = pixels->getData();
@@ -842,12 +875,13 @@ void ofxFFmpegRecorder::processFrame()
 
 void ofxFFmpegRecorder::processBuffer()
 {
-    while( isRecording() ) {
+    while( m_CustomRecordingFileAudio != nullptr ) {
         ofSoundBuffer *buffer = nullptr;
         if( m_Buffers.consume( buffer ) && buffer ) {
             // const float *data = buffer->getBuffer().data();
             // const size_t dataLength = buffer->getBuffer().size();
-            const size_t written = fwrite( &buffer->getBuffer()[0], sizeof( float ), buffer->getBuffer().size(), m_CustomRecordingFile );
+            const size_t written
+                = fwrite( &buffer->getBuffer()[0], sizeof( float ), buffer->getBuffer().size(), m_CustomRecordingFileAudio );
             if( written <= 0 ) {
                 LOG_WARNING( "Cannot write the buffer." );
             }

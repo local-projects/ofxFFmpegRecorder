@@ -237,6 +237,7 @@ class ofxFFmpegRecorder {
     bool isRecording() const;
 
     bool isRecordingCustom() const;
+    bool isRecordingCustomAudio() const;
     bool isRecordingDefault() const;
 
     /**
@@ -286,7 +287,7 @@ class ofxFFmpegRecorder {
 
     std::string m_VideCodec;
     std::string m_AudioCodec;
-    FILE *      m_CustomRecordingFile, *m_DefaultRecordingFile;
+    FILE *m_CustomRecordingFile, *m_CustomRecordingFileAudio, *m_DefaultRecordingFile;
 
     /**
      * @brief This is used to make sure that we put in frames no more than the m_Fps. This is used in custom recording.
