@@ -554,7 +554,7 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
         return 0;
     }
 
-    if( m_CustomRecordingFileAudio == nullptr || m_CustomRecordingFileAudio == NULL ) {
+    if( m_CustomRecordingFileAudio == nullptr ) {
         LOG_ERROR( "Custom recording is not in proggress. Cannot add the frame." );
         return 0;
     }
@@ -857,7 +857,7 @@ void ofxFFmpegRecorder::determineDefaultDevices()
 
 void ofxFFmpegRecorder::processFrame()
 {
-    while( m_CustomRecordingFile != nullptr ) {
+    while( m_CustomRecordingFile != nullptr || m_CustomRecordingFile != NULL ) {
         ofPixels *pixels = nullptr;
         if( m_Frames.consume( pixels ) && pixels ) {
             const unsigned char *data = pixels->getData();
@@ -875,7 +875,7 @@ void ofxFFmpegRecorder::processFrame()
 
 void ofxFFmpegRecorder::processBuffer()
 {
-    while( m_CustomRecordingFileAudio != nullptr ) {
+    while( m_CustomRecordingFileAudio != nullptr || m_CustomRecordingFileAudio != NULL ) {
         ofSoundBuffer *buffer = nullptr;
         if( m_Buffers.consume( buffer ) && buffer ) {
             // const float *data = buffer->getBuffer().data();
