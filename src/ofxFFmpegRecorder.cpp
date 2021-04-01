@@ -380,9 +380,9 @@ bool ofxFFmpegRecorder::startCustomRecord()
     // args.push_back("-pix_fmt rgb24");
     args.push_back( "-pix_fmt " + mPixFmt );
     args.push_back( "-vcodec rawvideo" );
+
+    //configure output file
     args.push_back( "-i -" );
-
-
     args.push_back( "-vcodec " + m_VideCodec );
     args.push_back( "-b:v " + std::to_string( m_BitRate ) + "k" );
     args.push_back( "-r " + std::to_string( m_Fps ) );
@@ -433,6 +433,7 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
     args.push_back( "-y" );
     args.push_back( "-vn" );
     args.push_back( "-r " + std::to_string( m_sampleRate ) );
+    //args.push_back( "-f f64be" );
     args.push_back( "-f f32le" );
     // args.push_back("-acodec aac");
     args.push_back( "-ac 2" );
@@ -440,7 +441,7 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
 
 
     // audio export file config
-    args.push_back( "-acodec " + m_AudioCodec );
+    //args.push_back( "-acodec " + m_AudioCodec );
     args.push_back( "-f mp3" );
     args.push_back( "-ar " + std::to_string( m_sampleRate ) );
     args.push_back( "-ac 2" );
@@ -532,12 +533,16 @@ size_t ofxFFmpegRecorder::addFrame( const ofPixels &pixels )
     float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration - m_TotalPauseDuration;
     const float  framerate = 1.f / m_Fps;
 
+    m_Frames.produce( new ofPixels( pixels ) );
+    m_AddedVideoFrames++;
+    
+   /*
     while( m_AddedVideoFrames == 0 || delta >= framerate ) {
         delta -= framerate;
         m_Frames.produce( new ofPixels( pixels ) );
         m_AddedVideoFrames++;
     }
-
+     */
     return written;
 }
 
@@ -570,11 +575,17 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
     float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration - m_TotalPauseDuration;
     const float  framerate = 1.f / m_Fps;
 
+    m_Buffers.produce( new ofSoundBuffer( buffer ) );
+    m_AddedAudioFrames++;
+
+    /*
+    //this creates were noise and isn't adding buffers synchronously 
     while( m_AddedAudioFrames == 0 || delta >= framerate ) {
         delta -= framerate;
         m_Buffers.produce( new ofSoundBuffer( buffer ) );
         m_AddedAudioFrames++;
     }
+    */
 
     return written;
 }
