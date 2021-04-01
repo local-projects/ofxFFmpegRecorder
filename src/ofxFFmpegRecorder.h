@@ -1,12 +1,11 @@
 #pragma once
 
-#include "ofTypes.h"
-
-#include "ofVideoBaseTypes.h"
+#include "ofPixels.h"
+#include "ofRectangle.h"
 #include "ofSoundBaseTypes.h"
 #include "ofSoundBuffer.h"
-#include "ofRectangle.h"
-#include "ofPixels.h"
+#include "ofTypes.h"
+#include "ofVideoBaseTypes.h"
 
 #include <thread>
 
@@ -21,23 +20,23 @@ struct LockFreeQueue {
     LockFreeQueue()
     {
         // Add one to validate the iterators
-        m_List.push_back(T());
+        m_List.push_back( T() );
         m_HeadIt = m_List.begin();
         m_TailIt = m_List.end();
     }
 
-    void produce(const T &t)
+    void produce( const T &t )
     {
-        m_List.push_back(t);
+        m_List.push_back( t );
         m_TailIt = m_List.end();
-        m_List.erase(m_List.begin(), m_HeadIt);
+        m_List.erase( m_List.begin(), m_HeadIt );
     }
 
-    bool consume(T &t)
+    bool consume( T &t )
     {
         typename TList::iterator nextIt = m_HeadIt;
         ++nextIt;
-        if (nextIt != m_TailIt) {
+        if( nextIt != m_TailIt ) {
             m_HeadIt = nextIt;
             t = *m_HeadIt;
             return true;
@@ -46,30 +45,20 @@ struct LockFreeQueue {
         return false;
     }
 
-    int size() const
-    {
-        return std::distance(m_HeadIt, m_TailIt) - 1;
-    }
+    int size() const { return std::distance( m_HeadIt, m_TailIt ) - 1; }
 
-    typename std::list<T>::iterator getHead() const
-    {
-        return m_HeadIt;
-    }
+    typename std::list<T>::iterator getHead() const { return m_HeadIt; }
 
-    typename std::list<T>::iterator getTail() const
-    {
-        return m_TailIt;
-    }
+    typename std::list<T>::iterator getTail() const { return m_TailIt; }
 
-private:
+  private:
     using TList = std::list<T>;
-    TList m_List;
+    TList                    m_List;
     typename TList::iterator m_HeadIt, m_TailIt;
 };
 
-class ofxFFmpegRecorder
-{
-public:
+class ofxFFmpegRecorder {
+  public:
     ofxFFmpegRecorder();
     ~ofxFFmpegRecorder();
 
@@ -77,55 +66,56 @@ public:
      * @brief Setup the class
      * @param recordVideo
      * @param recordAudio This is not yet supported with custom recording
-     * @param ffmpegPath This variable is optional. If left empty, the default "ffmpeg" is used. This required that the "ffmpeg" is in the system's path.
+     * @param ffmpegPath This variable is optional. If left empty, the default "ffmpeg" is used. This required that the "ffmpeg" is in the
+     * system's path.
      */
-    
-    
-    void setup(bool recordVideo, bool recordAudio, glm::vec2 videoSize = glm::vec2(0,0), float fps = 30.f, unsigned int bitrate = 2000,
-               const std::string &ffmpegPath = "");
+
+
+    void setup( bool recordVideo, bool recordAudio, glm::vec2 videoSize = glm::vec2( 0, 0 ), float fps = 30.f, unsigned int bitrate = 2000,
+        const std::string &ffmpegPath = "" );
 
     bool isRecordVideo() const;
-    void setRecordVideo(bool record);
+    void setRecordVideo( bool record );
 
     bool isRecordAudio() const;
-    void setRecordAudio(bool record);
+    void setRecordAudio( bool record );
 
     std::string getFFmpegPath() const;
-    void setFFmpegPath(const std::string &path);
-    void setFFmpegPathToAddonsPath();
+    void        setFFmpegPath( const std::string &path );
+    void        setFFmpegPathToAddonsPath();
 
     float getCaptureDuration() const;
-    void setCaptureDuration(float duration);
+    void  setCaptureDuration( float duration );
 
     ofVideoDevice getDefaultVideoDevice() const;
-    void setDefaultVideoDevice(const ofVideoDevice &device);
+    void          setDefaultVideoDevice( const ofVideoDevice &device );
 
     ofSoundDevice getDefaultAudioDevice() const;
-    void setDefaultAudioDevice(const ofSoundDevice &device);
+    void          setDefaultAudioDevice( const ofSoundDevice &device );
 
     std::string getOutputPath() const;
-    void setOutputPath(const std::string &path);
+    void        setOutputPath( const std::string &path );
 
     float getFps() const;
-    void setFps(float fps);
+    void  setFps( float fps );
 
     unsigned int getBitRate() const;
-    void setBitRate(unsigned int rate);
+    void         setBitRate( unsigned int rate );
 
     std::string getVideoCodec() const;
-    void setVideoCodec(const std::string &codec);
+    void        setVideoCodec( const std::string &codec );
 
-    void setAudioConfig(int bufferSize, int sampleRate);
+    void setAudioConfig( int bufferSize, int sampleRate );
 
-	float getWidth();
-	void setWidth(float aw);
-	float getHeight();
-	void setHeight(float ah);
+    float getWidth();
+    void  setWidth( float aw );
+    float getHeight();
+    void  setHeight( float ah );
 
     bool isPaused() const;
-    void setPaused(bool paused);
+    void setPaused( bool paused );
 
-	void setPixelFormat(ofImageType aType);
+    void setPixelFormat( ofImageType aType );
 
     /**
      * @brief Returns the record duration for the custom recording. This will return 0 for the webcam recording.
@@ -137,14 +127,14 @@ public:
      * @brief Returns the record duration for the custom audio recording.
      * @return
      */
-    float getRecordedAudioDuration(float afps) const;
+    float getRecordedAudioDuration( float afps ) const;
 
     /**
      * @brief Starts recording a video from a default device that is determined by @ref determineDefaultDevices()
      * @param duration This is optional. Duration is in seconds.
      * @return If the class was already recording a video this method returns false, otherwise it returns true;
      */
-    bool record(float duration = 0);
+    bool record( float duration = 0 );
 
     /**
      * @brief Setup ffmpeg for a custom video recording. Input is taken from the stdin as raw image. This also inherits the
@@ -168,18 +158,20 @@ public:
     bool startCustomStreaming();
 
     /**
-     * @brief Add a frame to the stream. This can onle be used If you started recording a custom video. Make sure that the frames are added continuously.
+     * @brief Add a frame to the stream. This can onle be used If you started recording a custom video. Make sure that the frames are added
+     * continuously.
      * @param pixels
      * @return
      */
-    size_t addFrame(const ofPixels &pixels);
+    size_t addFrame( const ofPixels &pixels );
 
     /**
-     * @brief Add a sound buffer to the stream. This can onle be used If you started recording a custom audio. Make sure that the buffers are added continuously inside the audioIn thread.
+     * @brief Add a sound buffer to the stream. This can onle be used If you started recording a custom audio. Make sure that the buffers
+     * are added continuously inside the audioIn thread.
      * @param pixels
      * @return
      */
-    size_t addBuffer(const ofSoundBuffer &buffer, float afps);
+    size_t addBuffer( const ofSoundBuffer &buffer, float afps );
 
     void stop();
 
@@ -189,7 +181,7 @@ public:
     void cancel();
 
     bool isOverWrite() const;
-    void setOverWrite(bool overwrite);
+    void setOverWrite( bool overwrite );
 
     const std::vector<std::string> &getAdditionalInputArguments() const;
 
@@ -197,7 +189,7 @@ public:
      * @brief This method overwrites the existing additional arguments.
      * @param args
      */
-    void setAdditionalInputArguments(const std::vector<std::string> &args);
+    void setAdditionalInputArguments( const std::vector<std::string> &args );
 
     /**
      * @brief Add a single additional argument. This appends to the existing additional arguments.
@@ -208,7 +200,7 @@ public:
      * @endcode
      * @param arg
      */
-    void addAdditionalInputArgument(const std::string &arg);
+    void addAdditionalInputArgument( const std::string &arg );
 
     void clearAdditionalInputArguments();
 
@@ -218,7 +210,7 @@ public:
      * @brief This method overwrites the existing additional arguments.
      * @param args
      */
-    void setAdditionalOutputArguments(const std::vector<std::string> &args);
+    void setAdditionalOutputArguments( const std::vector<std::string> &args );
 
     /**
      * @brief Add a single additional argument. This appends to the existing additional arguments.
@@ -229,7 +221,7 @@ public:
      * @endcode
      * @param arg
      */
-    void addAdditionalOutputArgument(const std::string &arg);
+    void addAdditionalOutputArgument( const std::string &arg );
 
     void clearAdditionalOutputArguments();
 
@@ -248,8 +240,8 @@ public:
     bool isRecordingDefault() const;
 
     /**
-     * @brief Saves a thumbnail from the video at the given time. If videoFilePath is empty, then the m_OutputPath is used as the video source.
-     * But m_OutputPath cannot be used as video source if the video recording is in process If a default recording was done before.
+     * @brief Saves a thumbnail from the video at the given time. If videoFilePath is empty, then the m_OutputPath is used as the video
+     * source. But m_OutputPath cannot be used as video source if the video recording is in process If a default recording was done before.
      * @param hour
      * @param minute
      * @param second
@@ -257,12 +249,12 @@ public:
      * @param size
      * @param videoFilePath
      */
-    void saveThumbnail(const unsigned int &hour, const unsigned int &minute, const float &second, const std::string &output, glm::vec2 size = glm::vec2(0, 0),
-                       ofRectangle crop = ofRectangle(0, 0, 0, 0), std::string videoFilePath = "");
+    void saveThumbnail( const unsigned int &hour, const unsigned int &minute, const float &second, const std::string &output,
+        glm::vec2 size = glm::vec2( 0, 0 ), ofRectangle crop = ofRectangle( 0, 0, 0, 0 ), std::string videoFilePath = "" );
 
-private:
+  private:
     std::string m_FFmpegPath, m_OutputPath;
-    bool m_IsRecordVideo, m_IsRecordAudio;
+    bool        m_IsRecordVideo, m_IsRecordAudio;
 
     /**
      * @brief If this is true, the video capture will overwrite the file if it already exists. The default value is false.
@@ -274,12 +266,10 @@ private:
      */
     bool m_IsPaused;
 
-    glm::vec2 m_VideoSize;
+    glm::vec2    m_VideoSize;
     unsigned int m_BitRate, m_AddedVideoFrames, m_AddedAudioFrames;
 
-    float m_Fps,
-          m_CaptureDuration,
-          m_TotalPauseDuration;
+    float m_Fps, m_CaptureDuration, m_TotalPauseDuration;
 
     int m_bufferSize;
     int m_sampleRate;
@@ -296,7 +286,7 @@ private:
 
     std::string m_VideCodec;
     std::string m_AudioCodec;
-    FILE *m_CustomRecordingFile, *m_DefaultRecordingFile;
+    FILE *      m_CustomRecordingFile, *m_DefaultRecordingFile;
 
     /**
      * @brief This is used to make sure that we put in frames no more than the m_Fps. This is used in custom recording.
@@ -311,15 +301,16 @@ private:
      */
     std::vector<std::string> m_AdditionalInputArguments, m_AdditionalOutputArguments;
 
-    std::thread m_Thread;
-    LockFreeQueue<ofPixels *> m_Frames;
+    std::thread                    m_Thread;
+    LockFreeQueue<ofPixels *>      m_Frames;
     LockFreeQueue<ofSoundBuffer *> m_Buffers;
 
     std::string mPixFmt = "rgb24";
 
-private:
+  private:
     /**
-     * @brief Checks if the current default devices are still available. If they are not, gets the first available device for both audio and video.
+     * @brief Checks if the current default devices are still available. If they are not, gets the first available device for both audio and
+     * video.
      */
     void determineDefaultDevices();
 
@@ -329,5 +320,4 @@ private:
     void processFrame();
     void processBuffer();
     void joinThread();
-
 };
