@@ -16,7 +16,6 @@ ofxFFmpegRecorder::ofxFFmpegRecorder()
     , m_IsRecordVideo( false )
     , m_IsRecordAudio( false )
     , m_IsOverWrite( false )
-    , m_IsPaused( false )
     , m_VideoSize( 0, 0 )
     , m_BitRate( 2000 )
     , m_AddedVideoFrames( 0 )
@@ -25,7 +24,6 @@ ofxFFmpegRecorder::ofxFFmpegRecorder()
     , m_bufferSize( 1024 )
     , m_sampleRate( 44100 )
     , m_CaptureDuration( 0.f )
-    , m_TotalPauseDuration( 0.f )
     , m_DefaultVideoDevice()
     , m_DefaultAudioDevice()
     , m_VideCodec( "mpeg4" )
@@ -245,30 +243,6 @@ void ofxFFmpegRecorder::setHeight( float ah )
     m_VideoSize.y = ah;
 }
 
-bool ofxFFmpegRecorder::isPaused() const
-{
-    return m_IsPaused;
-}
-
-void ofxFFmpegRecorder::setPaused( bool paused )
-{
-    if( m_CustomRecordingFile == nullptr ) {
-        LOG_WARNING( "Cannot pause the default webcam recording." );
-    }
-    else {
-        if( paused && m_IsPaused == false ) {
-            m_PauseStartTime = std::chrono::high_resolution_clock::now();
-        }
-        else if( paused == false && m_IsPaused ) {
-            m_PauseEndTime = std::chrono::high_resolution_clock::now();
-            float delta = std::chrono::duration<float>( m_PauseEndTime - m_PauseStartTime ).count();
-            m_TotalPauseDuration += delta;
-        }
-
-        m_IsPaused = paused;
-    }
-}
-
 void ofxFFmpegRecorder::setPixelFormat( ofImageType aType )
 {
     mPixFmt = "rgb24";
@@ -476,10 +450,6 @@ bool ofxFFmpegRecorder::startCustomVidAudioRecord()
 
 size_t ofxFFmpegRecorder::addFrame( const ofPixels &pixels )
 {
-    if( m_IsPaused ) {
-        LOG_NOTICE( "Recording is paused." );
-        return 0;
-    }
 
     if( m_CustomRecordingFile == nullptr ) {
         LOG_ERROR( "Custom recording is not in proggress. Cannot add the frame." );
@@ -500,7 +470,7 @@ size_t ofxFFmpegRecorder::addFrame( const ofPixels &pixels )
 
     HighResClock now = std::chrono::high_resolution_clock::now();
     const float  recordedDuration = getRecordedDuration();
-    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration - m_TotalPauseDuration;
+    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration;
     const float  framerate = 1.f / m_Fps;
 
     m_Frames.produce( new ofPixels( pixels ) );
@@ -518,10 +488,6 @@ size_t ofxFFmpegRecorder::addFrame( const ofPixels &pixels )
 
 size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
 {
-    if( m_IsPaused ) {
-        LOG_NOTICE( "Recording is paused." );
-        return 0;
-    }
 
     if( m_CustomRecordingFileAudio == nullptr ) {
         LOG_ERROR( "Custom recording is not in proggress. Cannot add the frame." );
@@ -542,7 +508,7 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
 
     HighResClock now = std::chrono::high_resolution_clock::now();
     const float  recordedDuration = getRecordedAudioDuration( afps );
-    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration - m_TotalPauseDuration;
+    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration;
     const float  framerate = 1.f / m_Fps;
 
     m_Buffers.produce( new ofSoundBuffer( buffer ) );
@@ -562,10 +528,6 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
 
 size_t ofxFFmpegRecorder::addFrameAndBuffer( const ofPixels &pixels, const ofSoundBuffer &buffer, float afps )
 {
-    if( m_IsPaused ) {
-        LOG_NOTICE( "Recording is paused." );
-        return 0;
-    }
 
     if( m_CustomRecordingFileAudio == nullptr || m_CustomRecordingFile == nullptr ) {
         LOG_ERROR( "Custom recording is not in proggress. Cannot add the frame or buffer." );

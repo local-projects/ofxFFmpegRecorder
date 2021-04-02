@@ -116,9 +116,6 @@ class ofxFFmpegRecorder {
     float getHeight();
     void  setHeight( float ah );
 
-    bool isPaused() const;
-    void setPaused( bool paused );
-
     void setPixelFormat( ofImageType aType );
 
     /**
@@ -263,15 +260,10 @@ class ofxFFmpegRecorder {
      */
     bool m_IsOverWrite;
 
-    /**
-     * @brief Pausing only works for custom recording.
-     */
-    bool m_IsPaused;
-
     glm::vec2    m_VideoSize;
     unsigned int m_BitRate, m_AddedVideoFrames, m_AddedAudioFrames;
 
-    float m_Fps, m_CaptureDuration, m_TotalPauseDuration;
+    float m_Fps, m_CaptureDuration;
 
     int m_bufferSize;
     int m_sampleRate;
@@ -294,8 +286,6 @@ class ofxFFmpegRecorder {
      * @brief This is used to make sure that we put in frames no more than the m_Fps. This is used in custom recording.
      */
     HighResClock m_RecordStartTime;
-
-    HighResClock m_PauseStartTime, m_PauseEndTime;
 
     /**
      * @brief Additional arguments can be used to extend the functionality of ofxFFmpegRecorder. Additional arguments are used
