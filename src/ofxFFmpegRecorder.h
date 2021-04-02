@@ -96,6 +96,10 @@ class ofxFFmpegRecorder {
     std::string getOutputPath() const;
     void        setOutputPath( const std::string &path );
 
+    std::string getAudOutputPath() const;
+    void        setAudOutputPath( const std::string &path );
+
+
     float getFps() const;
     void  setFps( float fps );
 
@@ -149,6 +153,10 @@ class ofxFFmpegRecorder {
      * @return If the class was already recording a video/audio this method returns false, otherwise it returns true;
      */
     bool startCustomAudioRecord();
+
+    // NEED TO DO: test / write description
+    bool   startCustomVidAudioRecord();
+    size_t addFrameAndBuffer( const ofPixels &pixels, const ofSoundBuffer &buffer, float afps );
 
     /**
      * @brief Setup ffmpeg for a custom video streaming. Input is taken from the stdin as raw image. This also inherits the
@@ -254,7 +262,7 @@ class ofxFFmpegRecorder {
         glm::vec2 size = glm::vec2( 0, 0 ), ofRectangle crop = ofRectangle( 0, 0, 0, 0 ), std::string videoFilePath = "" );
 
   private:
-    std::string m_FFmpegPath, m_OutputPath;
+    std::string m_FFmpegPath, m_OutputPath, m_OutputPathAud;
     bool        m_IsRecordVideo, m_IsRecordAudio;
 
     /**
@@ -287,7 +295,7 @@ class ofxFFmpegRecorder {
 
     std::string m_VideCodec;
     std::string m_AudioCodec;
-    FILE *m_CustomRecordingFile, *m_CustomRecordingFileAudio, *m_DefaultRecordingFile;
+    FILE *      m_CustomRecordingFile, *m_CustomRecordingFileAudio, *m_DefaultRecordingFile;
 
     /**
      * @brief This is used to make sure that we put in frames no more than the m_Fps. This is used in custom recording.
@@ -320,5 +328,6 @@ class ofxFFmpegRecorder {
      */
     void processFrame();
     void processBuffer();
+    void processFrameAndBuffer();
     void joinThread();
 };
