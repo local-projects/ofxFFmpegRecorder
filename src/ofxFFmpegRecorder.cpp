@@ -360,12 +360,14 @@ bool ofxFFmpegRecorder::startCustomRecord()
     args.push_back( "-pix_fmt " + mPixFmt );
     args.push_back( "-vcodec rawvideo" );
 
+
     // configure output file
     args.push_back( "-i -" );
     args.push_back( "-vcodec " + m_VideCodec );
     args.push_back( "-b:v " + std::to_string( m_BitRate ) + "k" );
     args.push_back( "-r " + std::to_string( m_Fps ) );
     args.push_back( "-framerate " + std::to_string( m_Fps ) );
+    args.push_back( "-pix_fmt yuv420p -vsync 1 -g 1" );
     std::copy( m_AdditionalOutputArguments.begin(), m_AdditionalOutputArguments.end(), std::back_inserter( args ) );
 
     args.push_back( m_OutputPath );
@@ -375,6 +377,8 @@ bool ofxFFmpegRecorder::startCustomRecord()
     for( auto arg : args ) {
         cmd += arg + " ";
     }
+
+    // std::cout << "cmd vid: " << cmd << std::endl;
 
     m_CustomRecordingFile = _popen( cmd.c_str(), "wb" );
 
@@ -411,10 +415,10 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
     args.push_back( "-f f32le" );
     // args.push_back("-acodec aac");
     args.push_back( "-ac 2" );
-    args.push_back( "-i -" );
 
 
     // audio export file config
+    args.push_back( "-i -" );
     args.push_back( "-acodec " + m_AudioCodec );
     args.push_back( "-f mp3" );
     args.push_back( "-ar " + std::to_string( m_sampleRate ) );
@@ -430,6 +434,8 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
     for( auto arg : args ) {
         cmd += arg + " ";
     }
+
+    // std::cout << "cmd aud: " << cmd << std::endl;
 
     m_CustomRecordingFileAudio = _popen( cmd.c_str(), "wb" );
 
@@ -543,37 +549,36 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
     const size_t   framesToWrite = delta * m_Fps;
     ofSoundBuffer *bufferPtr = nullptr;
 
-    /*
-    while( m_AddedAudioFrames == 0 || framesToWrite > written ) {
 
-        if( !bufferPtr ) {
-            bufferPtr = new ofSoundBuffer( buffer ); // copy buffer data
-        }
-
-        if( written == framesToWrite - 1 ) {
-            // only the last frame we produce owns the buffer data
-            m_Buffers.produce( bufferPtr );
-        }
-        else {
-            // otherwise, we reference the data
-            ofSoundBuffer *bufferRef = new ofSoundBuffer();
-
-            //void ofSoundBuffer::copyFrom(const vector &shortBuffer, size_t numChannels, unsigned int sampleRate)
-            bufferRef->copyFrom( bufferPtr->getBuffer(), 2, m_sampleRate );
-
-            m_Buffers.produce( bufferRef );
-        }
-
-        ++m_AddedAudioFrames;
-        ++written;
-        m_lastAudioFrameTime = std::chrono::high_resolution_clock::now();
-    }
-    */
-
-    
     m_Buffers.produce( new ofSoundBuffer( buffer ) );
     m_AddedAudioFrames++;
-    
+
+    /*
+while( m_AddedAudioFrames == 0 || framesToWrite > written ) {
+
+if( !bufferPtr ) {
+    bufferPtr = new ofSoundBuffer( buffer ); // copy buffer data
+}
+
+if( written == framesToWrite - 1 ) {
+    // only the last frame we produce owns the buffer data
+    m_Buffers.produce( bufferPtr );
+}
+else {
+    // otherwise, we reference the data
+    ofSoundBuffer *bufferRef = new ofSoundBuffer();
+
+    //void ofSoundBuffer::copyFrom(const vector &shortBuffer, size_t numChannels, unsigned int sampleRate)
+    bufferRef->copyFrom( bufferPtr->getBuffer(), 2, m_sampleRate );
+
+    m_Buffers.produce( bufferRef );
+}
+
+++m_AddedAudioFrames;
+++written;
+m_lastAudioFrameTime = std::chrono::high_resolution_clock::now();
+}
+*/
 
     /*
     //this creates were noise and isn't adding buffers synchronously
@@ -624,10 +629,11 @@ size_t ofxFFmpegRecorder::addFrameAndBuffer( const ofPixels &pixels, const ofSou
 void ofxFFmpegRecorder::stop()
 {
     if( m_CustomRecordingFile || m_CustomRecordingFileAudio ) {
-
+        /*
         while( m_Frames.size() > 0 || m_Buffers.size() > 0 ) {
             ofSleepMillis( 100 );
         }
+        */
 
         if( m_CustomRecordingFile ) {
             _pclose( m_CustomRecordingFile );
@@ -641,6 +647,7 @@ void ofxFFmpegRecorder::stop()
         m_AddedAudioFrames = 0;
 
         joinThread();
+
     }
     else if( m_DefaultRecordingFile ) {
         fwrite( "q", sizeof( char ), 1, m_DefaultRecordingFile );
