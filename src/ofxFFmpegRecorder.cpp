@@ -314,14 +314,7 @@ bool ofxFFmpegRecorder::record( float duration )
     m_CaptureDuration = duration;
 
     std::vector<std::string> args;
-
-#if defined( _WIN32 )
     args.push_back( "-f dshow" );
-#elif defined( __APPLE__ )
-    args.push_back( "-f avfoundation" );
-#else
-    args.push_back( "-f v4l2" );
-#endif // PLATFORM_CHECK
 
     if( m_CaptureDuration > 0.f ) {
         args.push_back( "-t " + std::to_string( m_CaptureDuration ) );
@@ -354,11 +347,7 @@ bool ofxFFmpegRecorder::record( float duration )
         cmd += arg + " ";
     }
 
-#if defined( _WIN32 )
     m_DefaultRecordingFile = _popen( cmd.c_str(), "w" );
-#else
-    m_DefaultRecordingFile = popen( cmd.c_str(), "w" );
-#endif
 
     return true;
 }
@@ -413,12 +402,7 @@ bool ofxFFmpegRecorder::startCustomRecord()
         cmd += arg + " ";
     }
 
-#if defined( _WIN32 )
     m_CustomRecordingFile = _popen( cmd.c_str(), "wb" );
-#else
-    //    m_CustomRecordingFile = _popen(cmd.c_str(), "w");
-    m_CustomRecordingFile = popen( cmd.c_str(), "w" );
-#endif // _WIN32
 
     return true;
 }
@@ -461,8 +445,8 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
     args.push_back( "-f mp3" );
     args.push_back( "-ar " + std::to_string( m_sampleRate ) );
     args.push_back( "-ac 2" );
-    //args.push_back( "-b:a 320k" );
-    //args.push_back( "async=1000" );
+    // args.push_back( "-b:a 320k" );
+    // args.push_back( "async=1000" );
 
     std::copy( m_AdditionalOutputArguments.begin(), m_AdditionalOutputArguments.end(), std::back_inserter( args ) );
 
@@ -473,11 +457,8 @@ bool ofxFFmpegRecorder::startCustomAudioRecord()
         cmd += arg + " ";
     }
 
-#if defined( _WIN32 )
     m_CustomRecordingFileAudio = _popen( cmd.c_str(), "wb" );
-#else
-    m_CustomRecordingFileAudio = popen( cmd.c_str(), "w" );
-#endif // _WIN32
+
 
     return true;
 }
@@ -489,46 +470,6 @@ bool ofxFFmpegRecorder::startCustomVidAudioRecord()
 
     if( !vid || !audio )
         return false;
-
-    return true;
-}
-
-bool ofxFFmpegRecorder::startCustomStreaming()
-{
-    if( isRecording() ) {
-        LOG_ERROR( "A recording is already in proggress." );
-        return false;
-    }
-
-    m_AddedVideoFrames = 0;
-    m_AddedAudioFrames = 0;
-
-    std::vector<std::string> args;
-    std::copy( m_AdditionalInputArguments.begin(), m_AdditionalInputArguments.end(), std::back_inserter( args ) );
-
-    args.push_back( "-framerate " + std::to_string( m_Fps ) );
-    args.push_back( "-s " + std::to_string( static_cast<unsigned int>( m_VideoSize.x ) ) + "x"
-        + std::to_string( static_cast<unsigned int>( m_VideoSize.y ) ) );
-    args.push_back( "-f rawvideo" );
-    args.push_back( "-pix_fmt " + mPixFmt );
-    args.push_back( "-vcodec rawvideo" );
-    args.push_back( "-i -" );
-
-    args.push_back( "-b:v " + std::to_string( m_BitRate ) + "k" );
-    std::copy( m_AdditionalOutputArguments.begin(), m_AdditionalOutputArguments.end(), std::back_inserter( args ) );
-
-    args.push_back( "-f rtp rtp://127.0.0.1:1234" );
-
-    std::string cmd = m_FFmpegPath + " ";
-    for( auto arg : args ) {
-        cmd += arg + " ";
-    }
-
-#if defined( _WIN32 )
-    m_CustomRecordingFile = _popen( cmd.c_str(), "w" );
-#else
-    m_CustomRecordingFile = popen( cmd.c_str(), "w" );
-#endif
 
     return true;
 }
@@ -666,21 +607,12 @@ void ofxFFmpegRecorder::stop()
         }
 
         if( m_CustomRecordingFile ) {
-#if defined( _WIN32 )
             _pclose( m_CustomRecordingFile );
             m_CustomRecordingFile = nullptr;
-#else
-            pclose( m_CustomRecordingFile );
-#endif
         }
-
         if( m_CustomRecordingFileAudio ) {
-#if defined( _WIN32 )
             _pclose( m_CustomRecordingFileAudio );
             m_CustomRecordingFileAudio = nullptr;
-#else
-            pclose( m_CustomRecordingFileAudio );
-#endif
         }
         m_AddedVideoFrames = 0;
         m_AddedAudioFrames = 0;
@@ -689,11 +621,7 @@ void ofxFFmpegRecorder::stop()
     }
     else if( m_DefaultRecordingFile ) {
         fwrite( "q", sizeof( char ), 1, m_DefaultRecordingFile );
-#if defined( _WIN32 )
         _pclose( m_DefaultRecordingFile );
-#else
-        pclose( m_DefaultRecordingFile );
-#endif
         m_DefaultRecordingFile = nullptr;
     }
 }
@@ -703,23 +631,14 @@ void ofxFFmpegRecorder::cancel()
     if( m_CustomRecordingFile || m_CustomRecordingFileAudio ) {
 
         if( m_CustomRecordingFile ) {
-#if defined( _WIN32 )
             _pclose( m_CustomRecordingFile );
-#else
-            pclose( m_CustomRecordingFile );
-#endif
             m_CustomRecordingFile = nullptr;
             m_AddedVideoFrames = 0;
         }
 
         if( m_CustomRecordingFileAudio ) {
-#if defined( _WIN32 )
             _pclose( m_CustomRecordingFileAudio );
-#else
-            pclose( m_CustomRecordingFileAudio );
-#endif
             m_CustomRecordingFileAudio = nullptr;
-
             m_AddedAudioFrames = 0;
         }
 
@@ -727,11 +646,7 @@ void ofxFFmpegRecorder::cancel()
     }
     else if( m_DefaultRecordingFile ) {
         fwrite( "q", sizeof( char ), 1, m_DefaultRecordingFile );
-#if defined( _WIN32 )
         _pclose( m_DefaultRecordingFile );
-#else
-        pclose( m_DefaultRecordingFile );
-#endif
         m_DefaultRecordingFile = nullptr;
     }
 
@@ -885,13 +800,8 @@ void ofxFFmpegRecorder::saveThumbnail( const unsigned int &hour, const unsigned 
         cmd += arg + " ";
     }
 
-#if defined( _WIN32 )
     FILE *file = _popen( cmd.c_str(), "w" );
     _pclose( file );
-#else
-    FILE *file = popen( cmd.c_str(), "w" );
-    pclose( file );
-#endif
 }
 
 void ofxFFmpegRecorder::determineDefaultDevices()

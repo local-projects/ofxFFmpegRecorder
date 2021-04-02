@@ -159,13 +159,6 @@ class ofxFFmpegRecorder {
     size_t addFrameAndBuffer( const ofPixels &pixels, const ofSoundBuffer &buffer, float afps );
 
     /**
-     * @brief Setup ffmpeg for a custom video streaming. Input is taken from the stdin as raw image. This also inherits the
-     * m_AdditionalArguments.
-     * @return If the class was already recording a video/audio this method returns false, otherwise it returns true;
-     */
-    bool startCustomStreaming();
-
-    /**
      * @brief Add a frame to the stream. This can onle be used If you started recording a custom video. Make sure that the frames are added
      * continuously.
      * @param pixels
