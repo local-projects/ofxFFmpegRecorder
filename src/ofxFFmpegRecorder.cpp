@@ -466,15 +466,44 @@ size_t ofxFFmpegRecorder::addFrame( const ofPixels &pixels )
     if( m_AddedVideoFrames == 0 ) {
         m_Thread = std::thread( &ofxFFmpegRecorder::processFrame, this );
         m_RecordStartTime = std::chrono::high_resolution_clock::now();
+        m_lastFrameTime = m_RecordStartTime;
     }
 
     HighResClock now = std::chrono::high_resolution_clock::now();
-    const float  recordedDuration = getRecordedDuration();
-    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration;
+    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - getRecordedDuration();
     const float  framerate = 1.f / m_Fps;
 
+    const size_t framesToWrite = delta * m_Fps;
+    ofPixels *   pixPtr = nullptr;
+
+    while( m_AddedVideoFrames == 0 || framesToWrite > written ) {
+
+        if( !pixPtr ) {
+            pixPtr = new ofPixels( pixels ); // copy pixel data
+        }
+
+        if( written == framesToWrite - 1 ) {
+            // only the last frame we produce owns the pixel data
+            m_Frames.produce( pixPtr );
+        }
+        else {
+            // otherwise, we reference the data
+            ofPixels *pixRef = new ofPixels();
+            pixRef->setFromExternalPixels(
+                pixPtr->getData(), pixPtr->getWidth(), pixPtr->getHeight(), pixPtr->getPixelFormat() ); // re-use already copied pointer
+            m_Frames.produce( pixRef );
+        }
+
+        ++m_AddedVideoFrames;
+        ++written;
+        m_lastFrameTime = std::chrono::high_resolution_clock::now();
+    }
+
+
+    /*
     m_Frames.produce( new ofPixels( pixels ) );
     m_AddedVideoFrames++;
+    */
 
     /*
      while( m_AddedVideoFrames == 0 || delta >= framerate ) {
@@ -504,15 +533,47 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
     if( m_AddedAudioFrames == 0 ) {
         m_Thread = std::thread( &ofxFFmpegRecorder::processBuffer, this );
         m_RecordStartTime = std::chrono::high_resolution_clock::now();
+        m_lastAudioFrameTime = m_RecordStartTime;
     }
 
     HighResClock now = std::chrono::high_resolution_clock::now();
-    const float  recordedDuration = getRecordedAudioDuration( afps );
-    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - recordedDuration;
+    float        delta = std::chrono::duration<float>( now - m_RecordStartTime ).count() - getRecordedAudioDuration( afps );
     const float  framerate = 1.f / m_Fps;
 
+    const size_t   framesToWrite = delta * m_Fps;
+    ofSoundBuffer *bufferPtr = nullptr;
+
+    /*
+    while( m_AddedAudioFrames == 0 || framesToWrite > written ) {
+
+        if( !bufferPtr ) {
+            bufferPtr = new ofSoundBuffer( buffer ); // copy buffer data
+        }
+
+        if( written == framesToWrite - 1 ) {
+            // only the last frame we produce owns the buffer data
+            m_Buffers.produce( bufferPtr );
+        }
+        else {
+            // otherwise, we reference the data
+            ofSoundBuffer *bufferRef = new ofSoundBuffer();
+
+            //void ofSoundBuffer::copyFrom(const vector &shortBuffer, size_t numChannels, unsigned int sampleRate)
+            bufferRef->copyFrom( bufferPtr->getBuffer(), 2, m_sampleRate );
+
+            m_Buffers.produce( bufferRef );
+        }
+
+        ++m_AddedAudioFrames;
+        ++written;
+        m_lastAudioFrameTime = std::chrono::high_resolution_clock::now();
+    }
+    */
+
+    
     m_Buffers.produce( new ofSoundBuffer( buffer ) );
     m_AddedAudioFrames++;
+    
 
     /*
     //this creates were noise and isn't adding buffers synchronously

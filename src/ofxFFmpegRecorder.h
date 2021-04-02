@@ -285,7 +285,7 @@ class ofxFFmpegRecorder {
     /**
      * @brief This is used to make sure that we put in frames no more than the m_Fps. This is used in custom recording.
      */
-    HighResClock m_RecordStartTime;
+    HighResClock m_RecordStartTime, m_lastFrameTime, m_lastAudioFrameTime;
 
     /**
      * @brief Additional arguments can be used to extend the functionality of ofxFFmpegRecorder. Additional arguments are used
