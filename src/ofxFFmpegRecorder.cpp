@@ -37,6 +37,7 @@ ofxFFmpegRecorder::ofxFFmpegRecorder()
 ofxFFmpegRecorder::~ofxFFmpegRecorder()
 {
     stop();
+    joinThread(); 
 }
 
 void ofxFFmpegRecorder::setup(
@@ -470,6 +471,7 @@ size_t ofxFFmpegRecorder::addFrame( const ofPixels &pixels )
     size_t written = 0;
 
     if( m_AddedVideoFrames == 0 ) {
+        joinThread(); 
         m_Thread = std::thread( &ofxFFmpegRecorder::processFrame, this );
         m_RecordStartTime = std::chrono::high_resolution_clock::now();
         m_lastFrameTime = m_RecordStartTime;
@@ -537,6 +539,7 @@ size_t ofxFFmpegRecorder::addBuffer( const ofSoundBuffer &buffer, float afps )
     size_t written = 0;
 
     if( m_AddedAudioFrames == 0 ) {
+        joinThread(); 
         m_Thread = std::thread( &ofxFFmpegRecorder::processBuffer, this );
         m_RecordStartTime = std::chrono::high_resolution_clock::now();
         m_lastAudioFrameTime = m_RecordStartTime;
@@ -647,7 +650,6 @@ void ofxFFmpegRecorder::stop()
         m_AddedAudioFrames = 0;
 
         joinThread();
-
     }
     else if( m_DefaultRecordingFile ) {
         fwrite( "q", sizeof( char ), 1, m_DefaultRecordingFile );
@@ -886,12 +888,17 @@ void ofxFFmpegRecorder::processBuffer()
         if( m_Buffers.consume( buffer ) && buffer ) {
             // const float *data = buffer->getBuffer().data();
             // const size_t dataLength = buffer->getBuffer().size();
-            const size_t written
-                = fwrite( &buffer->getBuffer()[0], sizeof( float ), buffer->getBuffer().size(), m_CustomRecordingFileAudio );
-            if( written <= 0 ) {
-                LOG_WARNING( "Cannot write the buffer." );
+            if( buffer->getBuffer().size() ) {
+
+                const size_t written
+                    = fwrite( &buffer->getBuffer()[0], sizeof( float ), buffer->getBuffer().size(), m_CustomRecordingFileAudio );
+                /*
+                if( written <= 0 ) {
+                    LOG_WARNING( "Cannot write the buffer." );
+                }
+                */
+                buffer->clear();
             }
-            buffer->clear();
             delete buffer;
         }
     }
