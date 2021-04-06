@@ -888,7 +888,7 @@ void ofxFFmpegRecorder::processBuffer()
         if( m_Buffers.consume( buffer ) && buffer ) {
             // const float *data = buffer->getBuffer().data();
             // const size_t dataLength = buffer->getBuffer().size();
-            if( buffer->getBuffer().size() ) {
+            if( buffer->getBuffer().size() != 0 ) {
 
                 const size_t written
                     = fwrite( &buffer->getBuffer()[0], sizeof( float ), buffer->getBuffer().size(), m_CustomRecordingFileAudio );
